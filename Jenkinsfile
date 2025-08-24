@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/navyaantr-hue/Playwright-ntr.git'
+                git branch: 'main', url: 'https://github.com/navyaantr-hue/Playwright-ntr.git'
             }
         }
         stage('Clean and Install') {
@@ -15,14 +15,13 @@ pipeline {
         }
         stage('Run Playwright Tests') {
             steps {
-                sh 'npx playwright test --reporter=junit,test-results/junit-results.xml,html'
+                sh 'npx playwright test --reporter=junit,html --output=playwright-report --reporter=junit=results.xml'
             }
         }
         stage('Publish Reports') {
             steps {
-                junit 'test-results/junit-results.xml'
-                publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: true,
-                    reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report'])
+                junit 'results.xml'
+                publishHTML([reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report'])
             }
         }
     }
