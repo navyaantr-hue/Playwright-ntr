@@ -2,46 +2,37 @@ pipeline {
     agent any
 
     tools {
-        nodejs "Node18"  // Make sure Node.js 18 is installed in Jenkins
+        nodejs "NodeJS-18"   // Make sure you have NodeJS-18 installed in Jenkins → Global Tool Configuration
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // Pull code from your Git repo
+                // Clone your GitHub repo
                 git branch: 'main', url: 'https://github.com/navyaantr-hue/Playwright-ntr.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
+                // Install npm packages and Playwright browsers
                 sh 'npm install'
+                sh 'npx playwright install --with-deps'
             }
         }
 
         stage('Run Playwright Tests') {
             steps {
-                // Run tests in headless mode
-                sh 'npx playwright test --reporter=html'
-            }
-        }
-
-        stage('Archive Test Report') {
-            steps {
-                // Publish Playwright HTML report in Jenkins
-                publishHTML([
-                    reportDir: 'playwright-report',
-                    reportFiles: 'index.html',
-                    reportName: 'Playwright Test Report'
-                ])
+                // Run your Playwright tests
+                sh 'npx playwright test'
             }
         }
     }
 
     post {
         always {
-            // Clean up workspace after build
-            cleanWs()
+            // Archive test results for later viewing in Jenkins
+            junit 'playwright-report/*.xml'  // If you have JUnit XML reports
         }
     }
 }
