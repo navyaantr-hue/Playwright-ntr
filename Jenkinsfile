@@ -2,37 +2,47 @@ pipeline {
     agent any
 
     tools {
-        nodejs "NodeJS-18"   // Ensure NodeJS-18 is added in Jenkins → Global Tool Configuration
+        nodejs "NodeJS-18" // Replace with the NodeJS name in Jenkins → Global Tool Configuration
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // Pull code from GitHub
-                git branch: 'main', url: 'https://github.com/navyaantr-hue/Playwright-ntr.git'
+                git branch: 'main',
+                    url: 'https://github.com/navyaantr-hue/Playwright-ntr.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                // Clean & Install packages + Playwright browsers
-                sh 'rm -rf node_modules playwright-report results.xml'
+                sh 'rm -rf node_modules playwright-report test-results'
                 sh 'npm install'
                 sh 'npx playwright install --with-deps'
             }
         }
 
+        stage('Discover Tests') {
+            steps {
+                echo "Discovering all tests before execution..."
+                // --list gives you all the tests detected without running them
+                sh 'npx playwright test --list'
+            }
+        }
+
         stage('Run Playwright Tests') {
             steps {
-                // Run tests with both HTML + JUnit reporters
-                sh 'npx playwright test --reporter=junit,html'
+                // Generate JUnit XML and HTML reports
+                sh 'npx playwright test --reporter=junit=test-results/results.xml --reporter=html=playwright-report'
             }
         }
 
         stage('Publish Reports') {
             steps {
-                // Publish HTML report on Jenkins
-                publishHTML(target: [
+                // Publish JUnit test results
+                junit 'test-results/results.xml'
+
+                // Publish Playwright HTML report
+                publishHTML([
                     reportDir: 'playwright-report',
                     reportFiles: 'index.html',
                     reportName: 'Playwright HTML Report',
@@ -40,16 +50,13 @@ pipeline {
                     alwaysLinkToLastBuild: true,
                     allowMissing: false
                 ])
-
-                // Publish JUnit report for Jenkins test results
-                junit 'results.xml'
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline completed. Check reports for details.'
+            echo "Pipeline completed. Check test reports for full details."
         }
     }
 }
