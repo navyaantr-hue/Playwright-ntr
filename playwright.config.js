@@ -1,25 +1,18 @@
-import { defineConfig, devices } from '@playwright/test';
+const { defineConfig } = require('@playwright/test');
 
-export default defineConfig({
-  testDir: './tests',              // All tests inside tests/ folder
-  testMatch: ['**/*.spec.js'],     // Only files ending with .spec.js
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+module.exports = defineConfig({
+  testDir: './tests',
+  timeout: 30 * 1000,
+  retries: 1,
   reporter: [
-    ['list'],                                         // Console output
-    ['html', { outputFolder: 'playwright-report' }],  // HTML report
-    ['junit', { outputFile: 'playwright-report/results.xml' }]  // JUnit for Jenkins
+    ['list'],
+    ['junit', { outputFile: 'playwright-report/results.xml' }],
+    ['html', { outputFolder: 'playwright-report', open: 'never' }]
   ],
-
   use: {
-    trace: 'on-first-retry',
-  },
-
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
-  ],
+    headless: true,
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    trace: 'retain-on-failure'
+  }
 });
