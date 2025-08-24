@@ -6,12 +6,6 @@ pipeline {
     }
 
     stages {
-        stage('Cleanup Workspace') {
-            steps {
-                cleanWs()
-            }
-        }
-
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/navyaantr-hue/Playwright-ntr.git'
@@ -21,20 +15,25 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
-                sh 'npx playwright install'
+                sh 'npx playwright install --with-deps'
             }
         }
 
         stage('Run Playwright Tests') {
             steps {
-                sh 'npx playwright test --reporter=junit'
+                // Generate both JUnit (for Jenkins) and HTML (for browser) reports
+                sh 'npx playwright test --reporter=junit,test-results/results.xml --reporter=html,playwright-report'
             }
         }
     }
 
     post {
         always {
-            junit 'playwright-report/results.xml'
+            // Archive JUnit reports for Jenkins UI
+            junit 'test-results/*.xml'
+
+            // Keep HTML reports as Jenkins build artifacts
+            archiveArtifacts artifacts: 'playwright-report/**', fingerprint: true
         }
     }
 }
