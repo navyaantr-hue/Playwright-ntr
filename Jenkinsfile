@@ -1,16 +1,13 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Checkout Code') {
-            steps {
-                git 'https://github.com/navyaantr-hue/Playwright-ntr.git'
-            }
-        }
+    tools {
+        nodejs "NodeJS-18" // Match this with the name you set in Jenkins -> Global Tool Configuration
+    }
 
+    stages {
         stage('Install Dependencies') {
             steps {
-                sh 'rm -rf node_modules playwright-report test-results'
                 sh 'npm install'
                 sh 'npx playwright install --with-deps'
             }
@@ -18,17 +15,19 @@ pipeline {
 
         stage('Run Playwright Tests') {
             steps {
-                sh 'npx playwright test'
+                sh 'npx playwright test --reporter=html'
             }
         }
 
-        stage('Publish Reports') {
+        stage('Publish Report') {
             steps {
-                junit 'test-results/results.xml'
-                publishHTML([
+                publishHTML(target: [
                     reportDir: 'playwright-report',
                     reportFiles: 'index.html',
-                    reportName: 'Playwright HTML Report'
+                    reportName: 'Playwright HTML Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: false
                 ])
             }
         }
@@ -36,7 +35,7 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline completed. Check reports for details.'
+            echo "Build completed. Check the Playwright HTML Report link above."
         }
     }
 }
