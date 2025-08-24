@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        nodejs "NodeJS-18"
+        nodejs "NodeJS-18"   // Set in Jenkins → Global Tool Configuration
     }
 
     stages {
@@ -12,28 +12,28 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Clean and Install') {
             steps {
-                sh 'npm install'
-                sh 'npx playwright install --with-deps'
+                sh 'rm -rf node_modules'                  // Fresh install every time
+                sh 'npm install'                          // Install project dependencies
+                sh 'npx playwright install --with-deps'   // Install Playwright browsers
             }
         }
 
         stage('Run Playwright Tests') {
             steps {
-                // Generate both JUnit (for Jenkins) and HTML (for browser) reports
-                sh 'npx playwright test --reporter=junit,test-results/results.xml --reporter=html,playwright-report'
+                sh 'npx playwright test --reporter=junit,html' // Generate both HTML & JUnit reports
             }
         }
-    }
 
-    post {
-        always {
-            // Archive JUnit reports for Jenkins UI
-            junit 'test-results/*.xml'
+        stage('Publish Reports') {
+            steps {
+                // Archive JUnit results
+                junit 'playwright-report/results.xml'   // Matches our Playwright config below
 
-            // Keep HTML reports as Jenkins build artifacts
-            archiveArtifacts artifacts: 'playwright-report/**', fingerprint: true
+                // Archive HTML report so it can be downloaded
+                archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true
+            }
         }
     }
 }
